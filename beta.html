@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reloj para pruebas IB</title>
+    <style>
+        :root {
+            /* Modo Claro (Default) */
+            --bg-color: #f2f2f7;
+            --card-bg: #ffffff;
+            --primary-blue: #007aff;
+            --accent-orange: #d35400;
+            --text-main: #1c1c1e;
+            --text-dim: #636366;
+            --track-bg: #e5e5ea;
+            --marker-bg: #1c1c1e;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #0f0f11;
+            --card-bg: #1c1c1e;
+            --primary-blue: #007aff;
+            --accent-orange: #ff9f0a;
+            --text-main: #ffffff;
+            --text-dim: #8e8e93;
+            --track-bg: #3a3a3c;
+            --marker-bg: #ffffff;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0; padding: 0;
+            transition: background 0.3s ease;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* TEMA */
+        .theme-container {
+            position: fixed; top: 15px; right: 15px; z-index: 2000;
+            display: flex; align-items: center; gap: 6px;
+            background: rgba(150,150,150,0.1); padding: 5px 10px; border-radius: 20px;
+        }
+        .switch { position: relative; display: inline-block; width: 30px; height: 18px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #3a3a3c; transition: .4s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--primary-blue); }
+        input:checked + .slider:before { transform: translateX(12px); }
+
+        /* VISOR */
+        #visor-container { width: 100%; height: 100vh; display: none; background: #000; }
+        #visor-container iframe, #visor-container img { width: 100%; height: 100%; border: none; display: block; object-fit: contain; }
+
+        /* RELOJ Y CARD */
+        #clock-section { width: 100%; min-height: 100vh; display: flex; justify-content: center; align-items: center; transition: all 0.3s ease; }
+        .card { background-color: var(--card-bg); width: 90%; max-width: 600px; padding: 40px; border-radius: 40px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); text-align: center; position: relative; }
+
+        /* COMPACTO (SCROLL) */
+        body.has-file #clock-section.compact { position: fixed; bottom: 0; left: 0; min-height: auto; z-index: 1500; }
+        body.has-file #clock-section.compact .card { max-width: 100%; width: 100%; border-radius: 0; padding: 10px 5%; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); }
+        body.has-file #clock-section.compact #main-clock { font-size: 36px; margin: 5px 0; }
+        body.has-file #clock-section.compact .controls, body.has-file #clock-section.compact #status-legend { display: none; }
+
+        #main-clock { font-size: 84px; font-weight: 200; margin-bottom: 20px; font-variant-numeric: tabular-nums; cursor: help; }
+        #warmup-timer { font-size: 24px; color: var(--accent-orange); font-weight: 800; display: none; margin-bottom: 5px; }
+        
+        /* PROGRESO */
+        .progress-container { position: relative; width: 100%; height: 10px; background: var(--track-bg); border-radius: 10px; margin: 30px 0; }
+        #progress-fill { height: 100%; width: 0%; background: var(--primary-blue); border-radius: 10px; transition: width 0.5s ease-out; }
+        .marker { position: absolute; top: 50%; width: 10px; height: 10px; background: var(--marker-bg); border-radius: 50%; transform: translate(-50%, -50%); display: none; border: 2px solid var(--primary-blue); }
+        .marker-label { position: absolute; top: -25px; font-size: 11px; color: var(--text-dim); transform: translateX(-50%); font-weight: 700; }
+
+        .time-labels { display: flex; justify-content: space-between; width: 100%; }
+        .label-value { font-size: 34px; font-weight: 900; font-variant-numeric: tabular-nums; }
+        .label-title { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.5px; }
+
+        /* CONTROLES */
+        .controls { display: flex; gap: 12px; margin-top: 35px; }
+        button, select, .file-btn { flex: 1; height: 55px; border-radius: 16px; border: none; font-weight: 700; cursor: pointer; background: var(--track-bg); color: var(--text-main); font-size: 13px; }
+        #start-btn { background: var(--primary-blue); color: white; flex: 1.5; }
+        .file-btn { display: flex; align-items: center; justify-content: center; }
+        input[type="file"] { display: none; }
+
+        /* MENU OVERRIDE CENTRADO */
+        #override-menu { 
+            position: absolute; 
+            background: var(--card-bg); 
+            border: 1px solid var(--track-bg); 
+            padding: 20px; 
+            border-radius: 20px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2); 
+            z-index: 3000; 
+            display: none; 
+            flex-direction: column;
+            align-items: center; 
+            gap: 12px; 
+            min-width: 180px;
+        }
+        #override-menu.active { display: flex; }
+        #override-menu label { font-size: 10px; font-weight: 800; color: var(--primary-blue); text-transform: uppercase; letter-spacing: 1px; }
+        #override-menu input { width: 100%; max-width: 140px; padding: 10px; border-radius: 10px; border: 2px solid var(--track-bg); font-family: inherit; font-weight: 700; text-align: center; background: var(--bg-color); color: var(--text-main); font-size: 16px; outline: none; }
+        #override-menu button { width: 100%; height: 40px; font-size: 11px; background: var(--primary-blue); color: white; border-radius: 10px; cursor: pointer; border: none; font-weight: 700; }
+    </style>
+</head>
+<body data-theme="light">
+
+<div class="theme-container">
+    <span>☀️</span>
+    <label class="switch"><input type="checkbox" id="theme-toggle"><span class="slider"></span></label>
+    <span>🌙</span>
+</div>
+
+<div id="override-menu">
+    <label>Inicio del Examen</label>
+    <input type="time" id="manual-start-input" step="1">
+    <button id="apply-override">ACTUALIZAR TIEMPOS</button>
+</div>
+
+<div id="visor-container"></div>
+
+<section id="clock-section">
+    <div class="card" id="clock-card">
+        <div id="warmup-timer">-05:00</div>
+        <div id="status-legend" style="font-size: 13px; color: var(--accent-orange); margin-bottom: 5px; font-weight: 700;">Selecciona la duración de la prueba</div>
+        <div id="main-clock">00:00:00</div>
+
+        <div class="progress-container">
+            <div id="progress-fill"></div>
+            <div id="m30" class="marker"><span class="marker-label">30m</span></div>
+            <div id="m5" class="marker"><span class="marker-label">5m</span></div>
+        </div>
+
+        <div class="time-labels">
+            <div style="text-align: left;">
+                <span class="label-title">Hora Inicial</span><br>
+                <span id="start-time-display" class="label-value">--:--:--</span>
+            </div>
+            <div style="text-align: right;">
+                <span class="label-title">Hora Final</span><br>
+                <span id="end-time-display" class="label-value">--:--:--</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <select id="duration-select">
+                <option value="" disabled selected>Duración</option>
+                <option value="60">60 min</option>
+                <option value="75">75 min</option>
+                <option value="90">90 min</option>
+                <option value="105">105 min</option>
+                <option value="135">135 min</option>
+            </select>
+            <button id="start-btn">Iniciar Lectura (5 min)</button>
+            <label class="file-btn">Archivo<input type="file" id="file-input" accept="image/*, application/pdf"></label>
+        </div>
+    </div>
+</section>
+
+<script>
+    let state = 'IDLE'; 
+    let startTime, endTime, durationMins;
+
+    document.getElementById('theme-toggle').addEventListener('change', (e) => {
+        document.body.setAttribute('data-theme', e.target.checked ? 'dark' : 'light');
+    });
+
+    // OVERRIDE MANUAL
+    const menu = document.getElementById('override-menu');
+    window.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        menu.classList.add('active');
+        menu.style.left = e.pageX + 'px';
+        menu.style.top = e.pageY + 'px';
+        
+        // Auto-rellenar con la hora actual
+        const now = new Date();
+        document.getElementById('manual-start-input').value = now.toTimeString().slice(0,8);
+    });
+
+    window.addEventListener('click', (e) => { if (!menu.contains(e.target)) menu.classList.remove('active'); });
+
+    document.getElementById('apply-override').addEventListener('click', () => {
+        const timeVal = document.getElementById('manual-start-input').value;
+        const sel = document.getElementById('duration-select');
+        if (!timeVal || !sel.value) return alert("Selecciona duración e ingresa hora.");
+
+        durationMins = parseInt(sel.value);
+        const [h, m, s] = timeVal.split(':');
+        startTime = new Date();
+        startTime.setHours(h, m, s || 0, 0);
+        endTime = new Date(startTime.getTime() + durationMins * 60000);
+        
+        forceRefreshUI();
+        menu.classList.remove('active');
+        document.getElementById('start-btn').disabled = true;
+        document.getElementById('start-btn').style.opacity = '0.3';
+    });
+
+    function forceRefreshUI() {
+        const now = new Date();
+        const warmup = document.getElementById('warmup-timer');
+        const legend = document.getElementById('status-legend');
+        const fill = document.getElementById('progress-fill');
+
+        document.getElementById('start-time-display').textContent = formatFullTime(startTime);
+        document.getElementById('end-time-display').textContent = formatFullTime(endTime);
+        document.getElementById('m30').style.left = ((durationMins - 30) / durationMins * 100) + "%";
+        document.getElementById('m5').style.left = ((durationMins - 5) / durationMins * 100) + "%";
+        document.querySelectorAll('.marker').forEach(m => m.style.display = 'block');
+
+        if (now < startTime) {
+            state = 'READING';
+            legend.textContent = "TIEMPO DE LECTURA";
+            const diff = Math.ceil((startTime - now) / 1000);
+            warmup.textContent = `-${String(Math.floor(diff/60)).padStart(2,'0')}:${String(diff%60).padStart(2,'0')}`;
+            warmup.style.display = 'block';
+            fill.style.width = "0%";
+        } else {
+            state = 'ACTIVE';
+            legend.textContent = "¡EXAMEN EN CURSO!";
+            warmup.style.display = 'none';
+            const elapsed = now - startTime;
+            const total = durationMins * 60000;
+            fill.style.width = Math.max(0, Math.min((elapsed/total)*100, 100)) + "%";
+        }
+    }
+
+    // ARCHIVOS
+    document.getElementById('file-input').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const visor = document.getElementById('visor-container');
+        visor.innerHTML = ''; visor.style.display = 'block';
+        document.body.classList.add('has-file');
+        const url = URL.createObjectURL(file);
+        if (file.type === 'application/pdf') {
+            const iframe = document.createElement('iframe'); iframe.src = url + "#toolbar=1"; visor.appendChild(iframe);
+        } else {
+            const img = document.createElement('img'); img.src = url; visor.appendChild(img);
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    window.addEventListener('scroll', () => {
+        if (!document.body.classList.contains('has-file')) return;
+        const clock = document.getElementById('clock-section');
+        window.scrollY < 200 ? clock.classList.add('compact') : clock.classList.remove('compact');
+    });
+
+    function update() {
+        const now = new Date();
+        document.getElementById('main-clock').textContent = formatFullTime(now);
+        if (state !== 'IDLE') forceRefreshUI();
+    }
+
+    document.getElementById('start-btn').addEventListener('click', () => {
+        const sel = document.getElementById('duration-select');
+        if (!sel.value) return alert("Selecciona duración");
+        durationMins = parseInt(sel.value);
+        startTime = new Date(Date.now() + 5 * 60000);
+        endTime = new Date(startTime.getTime() + durationMins * 60000);
+        state = 'READING';
+        forceRefreshUI();
+        document.getElementById('start-btn').disabled = true;
+        document.getElementById('start-btn').style.opacity = '0.3';
+    });
+
+    function formatFullTime(d) {
+        return d.getHours().toString().padStart(2,'0') + ":" + d.getMinutes().toString().padStart(2,'0') + ":" + d.getSeconds().toString().padStart(2,'0');
+    }
+
+    setInterval(update, 1000);
+</script>
+</body>
+</html>
