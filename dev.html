@@ -15,6 +15,7 @@
             --text-dim: #636366;
             --track-bg: #e5e5ea;
             --marker-bg: #1c1c1e;
+            --icon-color: #636366;
         }
 
         [data-theme="dark"] {
@@ -26,6 +27,7 @@
             --text-dim: #8e8e93;
             --track-bg: #3a3a3c;
             --marker-bg: #ffffff;
+            --icon-color: #ffffff;
         }
 
         body {
@@ -33,24 +35,34 @@
             color: var(--text-main);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             margin: 0; padding: 0;
-            transition: background 0.3s ease;
+            transition: background 0.3s ease, color 0.3s ease;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
 
-        /* TEMA */
+        /* TEMA CONTAINER CON SVG */
         .theme-container {
             position: fixed; top: 15px; right: 15px; z-index: 2000;
-            display: flex; align-items: center; gap: 6px;
-            background: rgba(150,150,150,0.1); padding: 5px 10px; border-radius: 20px;
+            display: flex; align-items: center; gap: 10px;
+            background: rgba(150,150,150,0.1); padding: 8px 12px; border-radius: 20px;
+            backdrop-filter: blur(10px);
         }
-        .switch { position: relative; display: inline-block; width: 30px; height: 18px; }
+        .theme-container svg {
+            width: 18px; height: 18px;
+            stroke: var(--icon-color);
+            transition: stroke 0.3s ease;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .switch { position: relative; display: inline-block; width: 34px; height: 20px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #3a3a3c; transition: .4s; border-radius: 20px; }
-        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: var(--primary-blue); }
-        input:checked + .slider:before { transform: translateX(12px); }
+        input:checked + .slider:before { transform: translateX(14px); }
 
         /* VISOR */
         #visor-container { width: 100%; height: 100vh; display: none; background: #000; }
@@ -69,37 +81,25 @@
         #main-clock { font-size: 84px; font-weight: 200; margin-bottom: 20px; font-variant-numeric: tabular-nums; }
         #warmup-timer { font-size: 24px; color: var(--accent-orange); font-weight: 800; display: none; margin-bottom: 5px; }
         
-        /* PROGRESO */
         .progress-container { position: relative; width: 100%; height: 10px; background: var(--track-bg); border-radius: 10px; margin: 30px 0; }
         #progress-fill { height: 100%; width: 0%; background: var(--primary-blue); border-radius: 10px; transition: width 0.5s ease-out; }
-        .marker { position: absolute; top: 50%; width: 10px; height: 10px; background: var(--marker-bg); border-radius: 50%; transform: translate(-50%, -50%); display: none; border: 2px solid var(--primary-blue); }
+        .marker { position: absolute; top: 50%; width: 14px; height: 14px; background: var(--marker-bg); border-radius: 50%; transform: translate(-50%, -50%); display: none; border: 2px solid var(--primary-blue); }
         .marker-label { position: absolute; top: -25px; font-size: 11px; color: var(--text-dim); transform: translateX(-50%); font-weight: 700; }
 
         .time-labels { display: flex; justify-content: space-between; width: 100%; }
         .label-value { font-size: 34px; font-weight: 900; font-variant-numeric: tabular-nums; }
         .label-title { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.5px; }
 
-        /* CONTROLES */
         .controls { display: flex; gap: 12px; margin-top: 35px; }
         button, select, .file-btn { flex: 1; height: 55px; border-radius: 16px; border: none; font-weight: 700; cursor: pointer; background: var(--track-bg); color: var(--text-main); font-size: 13px; }
         #start-btn { background: var(--primary-blue); color: white; flex: 1.5; }
         .file-btn { display: flex; align-items: center; justify-content: center; }
         input[type="file"] { display: none; }
 
-        /* MENU OVERRIDE CENTRADO */
+        /* MENU OVERRIDE */
         #override-menu { 
-            position: absolute; 
-            background: var(--card-bg); 
-            border: 1px solid var(--track-bg); 
-            padding: 20px; 
-            border-radius: 20px; 
-            box-shadow: 0 15px 35px rgba(0,0,0,0.2); 
-            z-index: 3000; 
-            display: none; 
-            flex-direction: column;
-            align-items: center; 
-            gap: 12px; 
-            min-width: 180px;
+            position: absolute; background: var(--card-bg); border: 1px solid var(--track-bg); padding: 20px; border-radius: 20px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2); z-index: 3000; display: none; flex-direction: column; align-items: center; gap: 12px; min-width: 180px; 
         }
         #override-menu.active { display: flex; }
         #override-menu label { font-size: 10px; font-weight: 800; color: var(--primary-blue); text-transform: uppercase; letter-spacing: 1px; }
@@ -110,15 +110,17 @@
 <body data-theme="light">
 
 <div class="theme-container">
-    <span>☀️</span>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+    
     <label class="switch"><input type="checkbox" id="theme-toggle"><span class="slider"></span></label>
-    <span>🌙</span>
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
 </div>
 
 <div id="override-menu">
     <label>Inicio del Examen</label>
     <input type="time" id="manual-start-input" step="1">
-    <button id="apply-override">ACTUALIZAR TIEMPOS</button>
+    <button id="apply-override" style="height: 300px;">ACTUALIZAR HORA</button>
 </div>
 
 <div id="visor-container"></div>
@@ -126,7 +128,7 @@
 <section id="clock-section">
     <div class="card" id="clock-card">
         <div id="warmup-timer">-05:00</div>
-        <div id="status-legend" style="font-size: 13px; color: var(--accent-orange); margin-bottom: 5px; font-weight: 700;">Selecciona la duración de la prueba</div>
+        <div id="status-legend" style="font-size: 13px; color: var(--accent-orange); margin-bottom: 5px; font-weight: 700;">SELECCIONA LA DURACIÓN</div>
         <div id="main-clock">00:00:00</div>
 
         <div class="progress-container">
@@ -147,8 +149,8 @@
         </div>
 
         <div class="controls">
-            <select id="duration-select">
-                <option value="" disabled selected>Duración</option>
+            <select id="duration-select" style="text-align: center;">
+                <option value="" disabled selected >Duración</option>
                 <option value="60">60 min</option>
                 <option value="75">75 min</option>
                 <option value="90">90 min</option>
@@ -169,15 +171,12 @@
         document.body.setAttribute('data-theme', e.target.checked ? 'dark' : 'light');
     });
 
-    // OVERRIDE MANUAL
     const menu = document.getElementById('override-menu');
     window.addEventListener('contextmenu', (e) => {
         e.preventDefault();
         menu.classList.add('active');
         menu.style.left = e.pageX + 'px';
         menu.style.top = e.pageY + 'px';
-        
-        // Auto-rellenar con la hora actual
         const now = new Date();
         document.getElementById('manual-start-input').value = now.toTimeString().slice(0,8);
     });
@@ -230,7 +229,6 @@
         }
     }
 
-    // ARCHIVOS
     document.getElementById('file-input').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
